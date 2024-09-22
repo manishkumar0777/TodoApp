@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1062257543430",
+    "project_id": "tomakeusergreat",
+    "storage_bucket": "tomakeusergreat.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1062257543430:android:66a78fccb992c3c2fc7687",
+        "android_client_info": {
+          "package_name": "com.awesome"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1062257543430-j8sgh9pgaoc5uvcqqf4n2rh664qt8jrk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmrzKgxV_r1VdPEZbp7UljefSeRKghExY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1062257543430-j8sgh9pgaoc5uvcqqf4n2rh664qt8jrk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
