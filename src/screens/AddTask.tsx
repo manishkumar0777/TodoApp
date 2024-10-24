@@ -43,7 +43,7 @@ const AddTask= () => {
   const createTask = async () => {
     const userId = auth().currentUser?.uid;
 
-    await firestore().collection('tasks').add({
+    await firestore().collection('users').doc(userId).collection("tasks").add({
       userId,
       taskTitle,
       date: date.toISOString(),

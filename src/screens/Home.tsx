@@ -15,6 +15,7 @@ import { CommonActions, useNavigation } from '@react-navigation/native';
 //styles
 
 import style from '../styles';
+import { RectButton, Swipeable } from 'react-native-gesture-handler';
 
 const HomeScreen = () => {
 
@@ -30,34 +31,42 @@ const HomeScreen = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      try {
-        const user = auth().currentUser;
-        if (user) {
-          console.log(user)
-          const userId = user.uid;
+      const user = auth().currentUser;
+      if (user) {
+        const userId = user.uid;
 
-          // Fetch user's profile name
-          const userDoc = await firestore().collection('users').doc(userId).get();
-          if (userDoc.exists) {
-            const fullName = userDoc.data().name;
-            const firstName = fullName.split(' ')[0]; // Split by space and take the first part
-            setUserName(firstName);
-          } else {
-            console.log('User document does not exist');
-          }
-
-          // Fetch user's tasks
-          const tasksSnapshot = await firestore().collection('tasks').where('userId', '==', userId).get();
-          const userTasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          console.log(userTasks)
-          setTasks(userTasks);
-          setLoading(false);
-        } else {
-          console.log('User not logged in');
+        // Fetch user's profile name
+        const userDoc = await firestore().collection('users').doc(userId).get();
+        if (userDoc.exists) {
+          const fullName = userDoc.data().name;
+          const firstName = fullName.split(' ')[0]; 
+          setUserName(firstName);
         }
-      } catch (error) {
-        console.error('Error fetching user data: ', error);
-        setLoading(false);
+
+        // Fetch user's tasks and calculate progress based on subtasks
+        const taskSubscriber = firestore()
+          .collection('users')
+          .doc(userId)
+          .collection('tasks')
+          .onSnapshot(async querySnapshot => {
+            const tasksData = await Promise.all(
+              querySnapshot.docs.map(async doc => {
+                const taskId = doc.id;
+                const task = doc.data();
+
+                return {
+                  ...task,
+                  id: taskId,
+                  progress : task.progress || 0,
+                };
+              })
+            );
+
+            setTasks(tasksData);
+            setLoading(false);
+          });
+
+        return () => taskSubscriber();
       }
     };
 
@@ -65,25 +74,55 @@ const HomeScreen = () => {
   }, []);
 
 
+  //handel the deletion of the task
+  const deleteTask = async (taskId) => {
+    try {
+      const user = auth().currentUser;
+      if (user) {
+        const userId = user.uid;
+        await firestore()
+          .collection('users')
+          .doc(userId)
+          .collection('tasks')
+          .doc(taskId)
+          .delete();
+      }
+    } catch (error) {
+      console.error('Error deleting the tasks', error)
+    }
+  };
+
+
   //rendering the task list 
   const renderTask = ({ item }) => {
+
     return (
-      <TouchableOpacity style={styles.taskItem}
-      onPress={() => navigation.navigate('TaskManager', { taskId: item.id })}
+      <Swipeable
+        renderRightActions={() => (
+          <RectButton style={styles.deleteButton} onPress={() => deleteTask(item.id)}>
+            <MaterialIcons name="delete-outline" size={30} color='#fff' />
+          </RectButton>
+        )}
       >
-        <View style={styles.taskDetails}>
-          <Text style={styles.taskTitle}>{item.taskTitle}</Text>
-          <Text style={styles.taskCategory}>{item.category}</Text>
-          <Text style={style.taskCount}>{item.taskCount} Tasks</Text>
-        </View>
-        <CircularProgress
-          size={60}
-          width={6}
-          fill={item.progress}
-          tintColor={'#000'}
-          backgroundColor="#F0F0F0"
-        />
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.taskItem}
+          onPress={() => navigation.navigate('TaskManager', { taskId: item.id })}
+        >
+          <View style={styles.taskDetails}>
+            <Text style={styles.taskTitle}>{item.taskTitle}</Text>
+            <Text style={styles.taskCategory}>{item.category}</Text>
+            <Text style={style.taskCount}>{item.taskCount} Tasks</Text>
+          </View>
+          <CircularProgress
+            size={60}
+            width={5}
+            fill={item.progress}
+            tintColor={'#000'}
+            backgroundColor="#F0F0F0"
+          >
+            
+          </CircularProgress>
+        </TouchableOpacity>
+      </Swipeable>
     )
   }
 
@@ -171,13 +210,13 @@ const HomeScreen = () => {
         <TouchableOpacity>
           <MaterialIcons name="calendar-today" size={30} color="#B0B0B0" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.addButton} onPress={() => {navigation.navigate('AddTask')}}>
+        <TouchableOpacity style={styles.addButton} onPress={() => { navigation.navigate('AddTask') }}>
           <MaterialIcons name="add-circle" size={60} color="#FF6347" />
         </TouchableOpacity>
         <TouchableOpacity>
           <MaterialIcons name="notifications" size={30} color="#B0B0B0" />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => {navigation.navigate('Profile')}}>
           <MaterialIcons name="person" size={30} color="#B0B0B0" />
         </TouchableOpacity>
       </View>
@@ -192,6 +231,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F8F8',
     paddingHorizontal: 20,
+  },
+  deleteButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000', // Red background for delete
+    width: 80, // Width of the swipeable button
+    height: 100,
+    marginTop: 10,
+    borderRadius: 8,
   },
   header: {
     flexDirection: 'row',
@@ -253,10 +301,11 @@ const styles = StyleSheet.create({
   },
   taskItem: {
     flexDirection: 'row',
+    height : 100,
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderWidth : 1,
+    borderWidth: 1,
     padding: 15,
     borderRadius: 10,
     marginTop: 10,
@@ -271,20 +320,20 @@ const styles = StyleSheet.create({
   taskTitle: {
     fontSize: 24,
     fontWeight: '600',
-    color : '#000'
+    color: '#000'
   },
   taskCategory: {
     fontSize: 14,
     color: '#666',
     marginTop: 3,
-    marginLeft : 4
+    marginLeft: 4
   },
-  
+
   bottomNavigation: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems : 'center',
-    paddingVertical : 4,
+    alignItems: 'center',
+    paddingVertical: 4,
     paddingHorizontal: 20,
     backgroundColor: '#fff',
     borderTopWidth: 1,
@@ -293,8 +342,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    borderTopLeftRadius : 20,
-    borderTopRightRadius : 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
 
   gridbtn: {
