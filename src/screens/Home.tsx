@@ -207,14 +207,8 @@ const HomeScreen = () => {
         <TouchableOpacity>
           <MaterialIcons name="home" size={30} color="#FF6347" />
         </TouchableOpacity>
-        <TouchableOpacity>
-          <MaterialIcons name="calendar-today" size={30} color="#B0B0B0" />
-        </TouchableOpacity>
         <TouchableOpacity style={styles.addButton} onPress={() => { navigation.navigate('AddTask') }}>
           <MaterialIcons name="add-circle" size={60} color="#FF6347" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <MaterialIcons name="notifications" size={30} color="#B0B0B0" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => {navigation.navigate('Profile')}}>
           <MaterialIcons name="person" size={30} color="#B0B0B0" />
